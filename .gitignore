@@ -1,0 +1,10 @@
+node_modules/
+data.json
+data.json.tmp
+*.log
+_studio/frames-*/
+data-*.json
+data-*.json.tmp
+_studio/kit/
+brand/
+_studio/
