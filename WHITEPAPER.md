@@ -94,7 +94,7 @@ It is the same chain with no new coin. Each wallet migrates its coins once, auto
 
 ## 11. $AEON
 
-$AEON is the Solana token that funds development and carries the community to mainnet. tAEON is the testnet coin, free from the faucet, used to test every feature before mainnet.
+$AEON is the Robinhood Chain token that funds development and carries the community to mainnet. tAEON is the testnet coin, free from the faucet, used to test every feature before mainnet.
 
 ## 12. Roadmap
 

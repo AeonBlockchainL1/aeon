@@ -22,7 +22,7 @@ export function chrome(links = APP, cta = ['/wallet', 'Open wallet']) {
   const f = document.createElement('footer'); f.className = 'foot';
   f.innerHTML = `<div class="card"><div style="color:var(--fog)">${BADGE(132)}</div><div><a class="logo" href="/" style="font-size:30px">${MARK(32)}<span>aeon</span></a>
     <div class="cols"><div><a href="/whitepaper">Whitepaper</a><a href="/docs">Documentation</a></div><div><a href="/explorer">Explorer</a><a href="/wallet">Wallet</a><a href="/mine">Mine</a></div><div><a href="/#lifecycle">How a payment works</a><a href="/#roadmap">Roadmap</a><a href="/#faq">FAQ</a></div><div><a href="${GH_URL}" target="_blank" rel="noopener">GitHub</a><a href="${X_URL}" target="_blank" rel="noopener">X</a><a href="/docs">API</a></div></div>
-    <p class="fine">Aeon Chain is a private proof-of-work chain running as a public testnet. $AEON is the Solana token that carries the project to mainnet. Open source under BSD-3-Clause.</p></div></div>`;
+    <p class="fine">Aeon Chain is a private proof-of-work chain running as a public testnet. $AEON is the Robinhood Chain token that carries the project to mainnet. Open source under BSD-3-Clause.</p></div></div>`;
   document.body.appendChild(f); return h;
 }
-export function caBar(el, mint) { if (!el) return; el.innerHTML = `<span class="cap">$AEON</span><code>${mint || 'launching on pump.fun'}</code>`; el.onclick = () => mint && copy(mint, '$AEON address'); }
+export function caBar(el, mint) { if (!el) return; el.innerHTML = `<span class="cap">$AEON</span><code>${mint || 'launching on Robinhood Chain'}</code>`; el.onclick = () => mint && copy(mint, '$AEON address'); }

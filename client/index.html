@@ -172,7 +172,7 @@ section{position:relative}
   <h2>From testnet to Meridian</h2>
   <div class="road">
     <div class="rv"><div class="ph"><span>phase 1</span><b>live</b></div><p><strong>Private testnet</strong>Ring signatures, stealth outputs, range proofs, ML-KEM quantum addresses, explorer, browser wallet, faucet.</p></div>
-    <div class="rv"><div class="ph"><span>phase 2</span><b>now</b></div><p><strong>$AEON</strong>The token launches on Solana and carries the project to mainnet.</p></div>
+    <div class="rv"><div class="ph"><span>phase 2</span><b>now</b></div><p><strong>$AEON</strong>The token launches on Robinhood Chain and carries the project to mainnet.</p></div>
     <div class="rv"><div class="ph"><span>phase 3</span><b>live</b></div><p><strong>Open mining</strong>Anyone can mine in the browser or with the CLI miner, rewards paid to their own private address.</p></div>
     <div class="rv"><div class="ph"><span>phase 4</span><b>planned</b></div><p><strong>Meridian</strong>Hash-based spend proofs and full-chain anonymity, specified, tested and reviewed in the open.</p></div>
     <div class="rv"><div class="ph"><span>phase 5</span><b>after review</b></div><p><strong>Mainnet</strong>Genesis of the main chain with Meridian on from block 1.</p></div>
@@ -187,7 +187,7 @@ section{position:relative}
     <details><summary>Why keep ring signatures if they use elliptic curves?</summary><p>They are fast and well studied today. A quantum computer that could break them does not exist yet, and breaking a ring only narrows which of 16 outputs was spent. Recorded receivers and amounts are what leak permanently, so Aeon seals those with ML-KEM first. The Meridian upgrade replaces the ring with hash-based spend proofs that hide each spend in the whole chain.</p></details>
     <details><summary>Where are my keys?</summary><p>In your browser. The wallet creates a 32-byte seed on your device and derives the spend key, view key and ML-KEM key from it. The node never sees them. Back up the seed: it is the only way to restore the wallet.</p></details>
     <details><summary>How do I mine?</summary><p>Open /mine, paste an Aeon address and press start. Your browser runs Argon2id proof of work and block rewards are paid to that address as private outputs. For more hashrate, run the command-line miner from the repository against the public node or your own.</p></details>
-    <details><summary>What is the difference between tAEON and $AEON?</summary><p>tAEON is the testnet coin you get from the faucet and from mining. $AEON is the Solana token that funds the work and carries the project to mainnet.</p></details>
+    <details><summary>What is the difference between tAEON and $AEON?</summary><p>tAEON is the testnet coin you get from the faucet and from mining. $AEON is the Robinhood Chain token that funds the work and carries the project to mainnet.</p></details>
     <details><summary>Can I run a node?</summary><p>Yes. The node, explorer and wallet are one open-source Node.js program. Clone the repository, run npm install and npm start, and you have the full chain on your machine.</p></details>
     <details><summary>When does mainnet launch?</summary><p>After Meridian is specified, tested and reviewed in the open. Mainnet genesis ships with Meridian active from block 1.</p></details>
   </div>

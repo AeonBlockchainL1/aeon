@@ -49,7 +49,7 @@ POST /api/faucet  {address}         25 tAEON, once an hour</pre>
 <p>Environment: <code>PORT</code>, <code>DATA_PATH</code> (chain file), <code>BLOCK_SEC</code> (target block time), <code>ARGON_KIB</code> (Argon2id memory), <code>AEON_MINT</code> (the $AEON token address shown on the site).</p>
 
 <h3>FAQ</h3>
-<p><b>Is tAEON the same as $AEON?</b> No. tAEON is the testnet coin and has no value. $AEON is the Solana token that funds and carries the project to mainnet.</p>
+<p><b>Is tAEON the same as $AEON?</b> No. tAEON is the testnet coin and has no value. $AEON is the Robinhood Chain token that funds and carries the project to mainnet.</p>
 <p><b>Where are my keys?</b> In your browser's local storage, created on your device. The node never sees your seed, view key or ML-KEM secret key. Back up the seed. Clearing site data without it loses the wallet.</p>
 <p><b>Why does sending take a few seconds?</b> Your browser builds the ring signature, 48-bit range proofs for every output and, for quantum addresses, an ML-KEM encapsulation. That work happens on your device so nothing private is sent to the node.</p>
 <p><b>Can the explorer see my balance?</b> No. It shows rings, key images, commitments and ciphertexts. Only the wallet holding the view key or ML-KEM secret key can open an output.</p>

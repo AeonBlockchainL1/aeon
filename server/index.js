@@ -10,7 +10,7 @@ if (typeof crypto.argon2 !== "function") { console.error(`Aeon Chain needs Node 
 const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), '..'), CLIENT = path.join(ROOT, 'client');
 const PORT = +process.env.PORT || 8288, DATA = (process.env.DATA_PATH || path.join(ROOT, 'data.json')).replace(/.json$/, '') + '-r2.json';   // r2: testnet reset 2026-11-02
 const BLOCK_SEC = +process.env.BLOCK_SEC || 30, ARGON_KIB = +process.env.ARGON_KIB || 8192, MIN_FEE = 10_000n;
-const AEON_MINT = process.env.AEON_MINT || '', NODE_PAUSE = +process.env.NODE_PAUSE || 0;   // ms the node's own miner rests between hashes, leaving room for public miners                         // $AEON on Solana, shown on the site once set
+const AEON_MINT = process.env.AEON_MINT || '', NODE_PAUSE = +process.env.NODE_PAUSE || 0;   // ms the node's own miner rests between hashes, leaving room for public miners                         // $AEON on Robinhood Chain, shown on the site once set
 const FAUCET = 25n * K.UNIT, MATURITY = 3, SUPPLY = 100_000_000n * K.UNIT, TAIL = 2n * K.UNIT;
 const now = () => Date.now(), big = (x) => BigInt(x), fmt = (v) => (Number(v) / 1e6).toLocaleString('en-US', { maximumFractionDigits: 6 });
 
