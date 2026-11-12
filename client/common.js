@@ -25,4 +25,4 @@ export function chrome(links = APP, cta = ['/wallet', 'Open wallet']) {
     <p class="fine">Aeon Chain is a private proof-of-work chain running as a public testnet. $AEON is the Robinhood Chain token that carries the project to mainnet. Open source under BSD-3-Clause.</p></div></div>`;
   document.body.appendChild(f); return h;
 }
-export function caBar(el, mint) { if (!el) return; el.innerHTML = `<span class="cap">$AEON</span><code>${mint || 'launching on Robinhood Chain'}</code>`; el.onclick = () => mint && copy(mint, '$AEON address'); }
+export function caBar(el, mint) { if (!el) return; el.innerHTML = `<span class="cap">$AEON</span><code>${mint || 'launching on Robinhood Chain'}</code>`; el.title = mint ? 'Copy the $AEON contract address (Robinhood Chain)' : ''; el.onclick = () => mint && copy(mint, '$AEON address'); }

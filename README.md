@@ -7,7 +7,7 @@
 - Live testnet, explorer and wallet: https://aeonblockchain.xyz
 - Whitepaper: [WHITEPAPER.md](WHITEPAPER.md) · https://aeonblockchain.xyz/whitepaper
 - X: [@AeonBlockchain](https://x.com/AeonBlockchain)
-- Token: $AEON on Robinhood Chain carries the project to mainnet. The testnet coin (tAEON) has no value.
+- Token: $AEON on Robinhood Chain carries the project to mainnet. Contract: `0x10025598a06f7d3353441ea6c8a5c4df97faf541`. The testnet coin (tAEON) has no value.
 
 ## What runs today
 
