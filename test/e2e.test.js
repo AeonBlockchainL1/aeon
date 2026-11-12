@@ -5,7 +5,7 @@ const B = process.env.API || 'http://localhost:8267';
 const get = (p) => fetch(B + p).then((r) => r.json()), post = (p, d) => fetch(B + p, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(d) }).then((r) => r.json());
 let pass = 0, fail = 0; const ok = (c, m) => { if (c) { pass++; console.log('PASS', m); } else { fail++; console.log('FAIL', m); } };
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-async function sync(w) { const { outs } = await get('/api/outputs?from=0&limit=4000'); const mine = [];
+async function sync(w) { const outs = []; for (;;) { const r = await get('/api/outputs?from=' + outs.length + '&limit=4000'); outs.push(...r.outs); if (!r.outs.length || outs.length >= r.total) break; } const mine = [];   // page through the whole chain, however long it is
   for (const o of outs) { const r = K.scan(w, o, o.R, o.i); if (r) mine.push({ ...r, gidx: o.g, P: o.P, C: o.C, h: o.h, ki: K.keyImage(r.x, o.P) }); }
   const { spent } = await post('/api/spent', { kis: mine.map((m) => m.ki) }); return mine.map((m, i) => ({ ...m, spent: spent[i] })); }
 async function waitFor(fn, ms = 120000) { const t = Date.now(); while (Date.now() - t < ms) { if (await fn()) return true; await sleep(1500); } return false; }
