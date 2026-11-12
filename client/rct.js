@@ -50,21 +50,41 @@ export function parseAddress(s) {
 // ---------- stealth outputs ----------
 const amtPad = (ss, i) => le(sha512(concatBytes(utf8ToBytes('aeon/amt'), ss, sbytes(BigInt(i)))).slice(0, 8));
 function derive(ss, i, A) { const k = Hs('out', ss, BigInt(i)); return { k, P: mul(G, k).add(A), x: Hs('mask', ss, BigInt(i)) }; }
+// ---------- dead drops: a sealed note inside every output ----------
+// 160 bytes on every new output (144 encrypted + 16-byte tag), present whether or not the sender wrote anything,
+// so an output that carries a message cannot be told apart from one that does not. The note is sealed with the
+// same shared secret that hides the payment: ML-KEM-768 for aeonq1 addresses, ECDH for aeon1.
+export const NOTE_MAX = 140, NOTE_BYTES = 160;
+const noteBlock = (ss, i, n) => sha512(concatBytes(utf8ToBytes('aeon/note/ks'), ss, sbytes(BigInt(i)), sbytes(BigInt(n))));
+const noteStream = (ss, i) => concatBytes(noteBlock(ss, i, 0), noteBlock(ss, i, 1), noteBlock(ss, i, 2)).slice(0, 144);
+const noteTag = (ss, i, ct) => sha3_256(concatBytes(utf8ToBytes('aeon/note/tag'), ss, sbytes(BigInt(i)), ct)).slice(0, 16);
+export function sealNote(ss, i, text) {
+  const t = utf8ToBytes(String(text == null ? '' : text)); if (t.length > NOTE_MAX) throw 'note is longer than 140 bytes';
+  const body = new Uint8Array(144); body[0] = t.length; body.set(t, 1); const ks = noteStream(ss, i), ct = body.map((b, k) => b ^ ks[k]);
+  return bytesToHex(concatBytes(ct, noteTag(ss, i, ct)));
+}
+// returns the text ('' when the sender wrote nothing) or null when the note is missing, not ours or was altered
+export function openNote(ss, i, hex) {
+  try { const raw = hexToBytes(hex); if (raw.length !== NOTE_BYTES) return null; const ct = raw.slice(0, 144), tag = raw.slice(144), want = noteTag(ss, i, ct);
+    if (tag.some((x, k) => x !== want[k])) return null; const ks = noteStream(ss, i), body = ct.map((b, k) => b ^ ks[k]); if (body[0] > NOTE_MAX) return null;
+    return new TextDecoder().decode(body.slice(1, 1 + body[0])); } catch { return null; }
+}
 // make one output. r = tx secret (classic path shares R = rG per tx). clear = coinbase (mask 1, amount public).
-export function makeOutput(addr, v, i, r, clear) {
+export function makeOutput(addr, v, i, r, clear, note) {
   const to = typeof addr === 'string' ? parseAddress(addr) : addr; let ss, ct = null;
   if (to.kemPk) { const e = ml_kem768.encapsulate(to.kemPk); ss = e.sharedSecret; ct = bytesToHex(e.cipherText); } else ss = enc(mul(to.B, r));
   const { k, P, x } = derive(ss, i, to.A), mask = clear ? 1n : x, C = commit(mask, v);
   const o = { P: ph(P), C: ph(C), amt: clear ? String(v) : (BigInt(v) ^ amtPad(ss, i)).toString(16) }; if (ct) o.ct = ct;
+  if (!clear) o.note = sealNote(ss, i, note);
   return { o, mask, v: BigInt(v) };
 }
-// scan one output: returns { v, mask, x(one-time secret) } if it is ours, else null.
+// scan one output: returns { v, mask, x(one-time secret), note } if it is ours, else null.
 export function scan(w, out, R, i) {
   let ss; if (out.ct) { try { ss = ml_kem768.decapsulate(hexToBytes(out.ct), w.kemSk); } catch { return null; } } else { if (!R) return null; ss = enc(mul(pt(R), w.b)); }
   const { k, P, x } = derive(ss, i, w.A); if (ph(P) !== out.P) return null;
   const clear = out.clear, v = clear ? BigInt(out.amt) : BigInt('0x' + out.amt) ^ amtPad(ss, i), mask = clear ? 1n : x;
   if (ph(commit(mask, v)) !== out.C) return null;
-  return { v, mask, x: mod(k + w.a) };
+  return { v, mask, x: mod(k + w.a), note: out.note ? openNote(ss, i, out.note) : null };
 }
 export const keyImage = (x, P) => ph(mul(Hp(typeof P === 'string' ? hexToBytes(P) : enc(P)), x));
 
@@ -110,9 +130,9 @@ export function mlsagVerify(msg, ring, sig, Cpseudo) {
 }
 
 // ---------- full private transaction ----------
-// ins: [{ v, mask, x, gidx, P, C, decoys:[{gidx,P,C} x15] }], outs: [{ address, v }], fee: bigint
+// ins: [{ v, mask, x, gidx, P, C, decoys:[{gidx,P,C} x15] }], outs: [{ address, v, note? }], fee: bigint
 export function buildTx(ins, outs, fee) {
-  const r = rand(), R = ph(mul(G, r)), made = outs.map((o, i) => makeOutput(o.address, o.v, i, r));
+  const r = rand(), R = ph(mul(G, r)), made = outs.map((o, i) => makeOutput(o.address, o.v, i, r, false, o.note));
   const tin = BigInt(ins.reduce((a, i) => a + BigInt(i.v), 0n)), tout = made.reduce((a, m) => a + m.v, 0n) + BigInt(fee);
   if (tin !== tout) throw 'inputs do not balance outputs + fee';
   const outMask = made.reduce((a, m) => mod(a + m.mask), 0n), pm = ins.map((_, k) => k < ins.length - 1 ? rand() : 0n);
@@ -129,6 +149,7 @@ export function buildTx(ins, outs, fee) {
 export function verifyTx(tx, getOut, spent) {
   if (!tx || tx.v !== 1 || !Array.isArray(tx.vin) || !Array.isArray(tx.vout) || !tx.vin.length || !tx.vout.length || tx.vin.length > 8 || tx.vout.length > 8) return 'malformed';
   const fee = BigInt(tx.fee); if (fee < 0n) return 'bad fee';
+  if (tx.vout.some((o) => o.note !== undefined && !(typeof o.note === 'string' && /^[0-9a-f]{320}$/.test(o.note)))) return 'sealed note must be exactly 160 bytes';
   const prefix = { v: 1, R: tx.R, fee: tx.fee, vin: tx.vin.map((v) => ({ ring: v.ring, pseudo: v.pseudo })), vout: tx.vout.map(({ rp, ...o }) => o) }, msg = txhash(prefix);
   const seen = new Set(); let sumIn = Z, sumOut = Z;
   for (const v of tx.vin) {
