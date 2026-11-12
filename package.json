@@ -1,6 +1,6 @@
 {
   "name": "aeon-chain",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Aeon Chain ($AEON): privacy with no expiry date. Ring signatures, stealth addresses, hidden amounts, ML-KEM payment detection.",
   "type": "module",
   "main": "server/index.js",

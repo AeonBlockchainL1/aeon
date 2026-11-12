@@ -19,6 +19,7 @@ One Node.js process is the node, the block explorer and the browser wallet. Ever
 | Double-spend protection | Each spend publishes a key image `I = x·Hp(P)`; the node rejects any image it has seen | `keyImage`, `verifyTx`, `server/index.js` |
 | Hidden receiver | Every output goes to a one-time address `P = Hs(secret, i)·G + A` | `makeOutput`, `scan` |
 | Quantum receive | `aeonq1` addresses carry an ML-KEM-768 key. The sender encapsulates, the 1,088-byte ciphertext rides with the output, only the receiver can decapsulate | `makeOutput`, `scan` |
+| Dead drops | Every new output carries a 160-byte sealed note (up to 140 bytes of text), encrypted with the output's shared secret and always present, so a message cannot be told apart from no message | `sealNote`, `openNote`, `scan` |
 | Hidden amount | Pedersen commitments `C = x·G + v·H`, a 48-bit range proof per output, and `Σ inputs = Σ outputs + fee·H` | `rangeProve`, `rangeVerify`, `verifyTx` |
 | Consensus | Argon2id proof of work (memory-hard), difficulty retargets every block toward 30 s | `server/index.js` `mine` |
 | Wallet | Keys are made in the browser from a 32-byte seed. The browser scans outputs, builds ring signatures and range proofs, then submits | `client/wallet.html` |

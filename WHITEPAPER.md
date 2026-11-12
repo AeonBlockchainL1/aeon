@@ -39,6 +39,18 @@ P = Hs(shared_secret, i)*G + A
 
 On aeon1 addresses the shared secret comes from ECDH with the receiver's view key. On aeonq1 addresses it comes from ML-KEM-768 encapsulation, and the 1,088-byte ciphertext travels with the output. The receiver scans each output with the view key or the ML-KEM secret key. To everyone else, two payments to the same wallet look unrelated.
 
+### 4.1 Dead drops
+
+Every output on a new transaction carries a 160-byte sealed note: up to 140 bytes of text chosen by the sender, encrypted and tagged with the same shared secret that hides the payment.
+
+```
+keystream = SHA-512("aeon/note/ks" || shared_secret || i || n), n = 0..2   (first 144 bytes)
+body      = length byte || text || zero padding                          (144 bytes)
+note      = (body XOR keystream) || SHA3-256("aeon/note/tag" || shared_secret || i || ciphertext)[0..16]
+```
+
+On aeonq1 addresses the shared secret comes from ML-KEM-768, so the note stays sealed against a quantum computer. The field is always present and always the same size, so the chain cannot tell a payment that carries a message from one that does not. The note is part of the signed transaction prefix, so nobody can swap it or strip it after signing. A note names no sender: the receiver learns only what the sender chose to write.
+
 ## 5. Hidden amounts
 
 Each amount is a Pedersen commitment:
