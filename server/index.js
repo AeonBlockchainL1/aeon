@@ -37,12 +37,12 @@ function scanOut(g) { const o = S.outs[g]; W.forEach((w, k) => { const r = K.sca
 function balance(k) { return owned[k].filter((u) => !S.kis[u.ki]).reduce((a, u) => a + u.v, 0n); }
 function decoys(avoid, n = 15) { const lim = S.outs.length; const pool = S.outs.map((o, g) => g).filter((g) => height() - S.outs[g].h >= MATURITY || S.outs.length < 200);
   const s = new Set(avoid), d = []; let tries = 0; while (d.length < n && tries++ < 5000) { const g = pool[Math.floor(Math.random() * pool.length)]; if (s.has(g)) continue; s.add(g); d.push({ gidx: g, ...getOut(g) }); } if (d.length < n) throw 'not enough outputs for a ring yet'; return d; }
-async function walletSend(k, address, v) {
+async function walletSend(k, address, v, note) {
   const fee = MIN_FEE, need = big(v) + fee, inflight = new Set(mempool.flatMap((t) => t.vin.map((x) => x.ki)));
   const utxo = owned[k].filter((u) => !S.kis[u.ki] && !inflight.has(u.ki) && !reserved.has(u.ki) && height() - S.outs[u.g].h >= MATURITY).sort((a, b) => (a.v > b.v ? -1 : 1));
   const pick = []; let sum = 0n; for (const u of utxo) { if (sum >= need) break; pick.push(u); sum += u.v; } if (sum < need) throw 'faucet is refilling, try again in a minute';
   const ins = pick.map((u) => ({ v: u.v, mask: u.mask, x: u.x, gidx: u.g, ...getOut(u.g), decoys: decoys([u.g]) }));
-  const outs = [{ address, v: big(v) }]; if (sum - need > 0n) outs.push({ address: W[k].address, v: sum - need });
+  const outs = [{ address, v: big(v), ...(note ? { note } : {}) }]; if (sum - need > 0n) outs.push({ address: W[k].address, v: sum - need });
   pick.forEach((u) => reserved.add(u.ki));
   try { return await work('build', ins, outs, fee); } finally { pick.forEach((u) => reserved.delete(u.ki)); }
 }
@@ -54,7 +54,7 @@ function nextDiff() { const n = S.blocks.length; if (n < 3) return 6; const t = 
   return Math.max(2, Math.round(t.diff * Math.min(1.25, Math.max(0.8, BLOCK_SEC / Math.max(1, span))))); }
 const powHash = (hdr, nonce) => new Promise((ok, no) => crypto.argon2('argon2id', { message: Buffer.from(hdr + '|' + nonce), nonce: Buffer.from('aeon-chain-pow!'), parallelism: 1, tagLength: 32, memory: ARGON_KIB, passes: 1 }, (e, h) => e ? no(e) : ok(h)));
 const meets = (h, diff) => BigInt('0x' + h.toString('hex')) * BigInt(diff) < 2n ** 256n;
-function addOutputs(txid, tx, h, clear) { tx.vout.forEach((o, i) => { const g = S.outs.length; S.outs.push({ P: o.P, C: o.C, amt: o.amt, ...(o.ct ? { ct: o.ct } : {}), ...(clear ? { clear: true } : {}), R: tx.R, i, h, txid }); scanOut(g); }); }
+function addOutputs(txid, tx, h, clear) { tx.vout.forEach((o, i) => { const g = S.outs.length; S.outs.push({ P: o.P, C: o.C, amt: o.amt, ...(o.ct ? { ct: o.ct } : {}), ...(o.note ? { note: o.note } : {}), ...(clear ? { clear: true } : {}), R: tx.R, i, h, txid }); scanOut(g); }); }
 // a block template paying the coinbase to `addr` (any aeon1/aeonq1 address); public miners and the node's own miner both use it
 function template(addr) {
   const txs = mempool.slice(0, 20), fees = txs.reduce((a, t) => a + big(t.fee), 0n), h = S.blocks.length, r = K.rand();
@@ -124,7 +124,7 @@ function stats() { const n = S.blocks.length, last = S.blocks.slice(-20), span =
   const priv = Object.values(S.txs).filter((t) => !t.coinbase), q = priv.reduce((a, t) => a + t.vout.filter((o) => o.ct).length, 0);
   return { name: 'Aeon Chain', ticker: 'AEON', network: 'testnet', height: n - 1, outputs: S.outs.length, keyImages: Object.keys(S.kis).length, privateTxs: priv.length, quantumOutputs: q, mempool: mempool.length,
     emitted: S.emitted, supply: String(SUPPLY), reward: String(reward()), diff: tip() ? tip().diff : 0, blockTime: +span.toFixed(1), targetTime: BLOCK_SEC, hashrate: tip() ? +(tip().diff / span).toFixed(2) : 0,
-    ring: K.RING, bits: K.BITS, pow: `Argon2id (${ARGON_KIB / 1024} MiB)`, mint: AEON_MINT || null, faucet: String(FAUCET), publicBlocks: S.pub || 0 }; }
+    ring: K.RING, bits: K.BITS, pow: `Argon2id (${ARGON_KIB / 1024} MiB)`, mint: AEON_MINT || null, sealedNotes: S.outs.reduce((a, o) => a + (o.note ? 1 : 0), 0), faucet: String(FAUCET), publicBlocks: S.pub || 0 }; }
 function search(q) { q = String(q || '').trim(); if (/^\d+$/.test(q) && S.blocks[+q]) return { type: 'block', id: q };
   if (/^[0-9a-f]{64}$/.test(q)) { if (S.txs[q]) return { type: 'tx', id: q }; const b = S.blocks.find((x) => x.hash === q); if (b) return { type: 'block', id: String(b.height) }; if (S.kis[q]) return { type: 'tx', id: S.kis[q] }; }
   return null; }
@@ -149,7 +149,7 @@ http.createServer(async (req, res) => {
     if (p.startsWith('/api/tx/')) { const id = p.slice(8), t = S.txs[id] || mempool.find((x) => K.txhash(x) === id); if (!t) return json(res, 404, { error: 'no such transaction' });
       const ring = t.vin ? t.vin.map((v) => ({ ki: v.ki, pseudo: v.pseudo, ring: v.ring, sig: v.sig ? { c0: v.sig.c0, r: v.sig.r.length } : null })) : [];
       return json(res, 200, { id, h: t.h ?? null, ts: t.ts ?? null, confirmations: t.h != null ? height() - t.h + 1 : 0, coinbase: !!t.coinbase, fee: t.fee || '0', R: t.R, vin: ring,
-        vout: t.vout.map((o) => ({ P: o.P, C: o.C, quantum: !!o.ct, ct: o.ct ? o.ct.slice(0, 96) : null, ctBytes: o.ct ? o.ct.length / 2 : 0, amount: t.coinbase ? o.amt : null, rangeBits: o.rp ? o.rp.length : t.coinbase ? 0 : K.BITS })), size: JSON.stringify(t).length }); }
+        vout: t.vout.map((o) => ({ P: o.P, C: o.C, quantum: !!o.ct, ct: o.ct ? o.ct.slice(0, 96) : null, ctBytes: o.ct ? o.ct.length / 2 : 0, note: o.note ? o.note.slice(0, 96) : null, noteBytes: o.note ? o.note.length / 2 : 0, amount: t.coinbase ? o.amt : null, rangeBits: o.rp ? o.rp.length : t.coinbase ? 0 : K.BITS })), size: JSON.stringify(t).length }); }
     if (p === '/api/search') { const r = search(u.searchParams.get('q')); return json(res, r ? 200 : 404, r || { error: 'nothing found: try a block height, block hash, tx id or key image' }); }
     // wallet sync
     if (p === '/api/outputs') { const from = Math.max(0, +u.searchParams.get('from') || 0), lim = Math.min(4000, +u.searchParams.get('limit') || 2000); return json(res, 200, { height: height(), total: S.outs.length, outs: S.outs.slice(from, from + lim).map((o, k) => ({ g: from + k, ...o })) }); }
@@ -158,7 +158,7 @@ http.createServer(async (req, res) => {
     if (p === '/api/tx' && req.method === 'POST') { const d = await body(req); try { return json(res, 200, { ok: true, id: await submit(d.tx) }); } catch (e) { return json(res, 200, { error: String(e) }); } }
     if (p === '/api/faucet' && req.method === 'POST') { const d = await body(req); try { K.parseAddress(d.address); } catch (e) { return json(res, 200, { error: String(e) }); }
       const key = d.address.slice(0, 80); if (limited(ip, 'f', 30 * 60_000) || (S.faucet[key] && now() - S.faucet[key] < 60 * 60_000)) return json(res, 200, { error: 'one faucet drip per hour' });
-      try { const id = await submit(await walletSend(0, d.address, FAUCET)); S.faucet[key] = now(); save(); return json(res, 200, { ok: true, id, amount: String(FAUCET) }); } catch (e) { hits.delete(ip + 'f'); return json(res, 200, { error: String(e) }); } }
+      try { const id = await submit(await walletSend(0, d.address, FAUCET, 'Welcome to Aeon. Only your wallet can read this note.')); S.faucet[key] = now(); save(); return json(res, 200, { ok: true, id, amount: String(FAUCET) }); } catch (e) { hits.delete(ip + 'f'); return json(res, 200, { error: String(e) }); } }
     if (p === '/api/work' && req.method === 'GET') { try { const j = getWork(u.searchParams.get('address') || ''); return json(res, 200, { id: j.id, height: j.T.b.height, diff: j.T.b.diff, hdr: j.T.hdr, reward: String(reward() + j.T.fees),
         argon: { type: 'argon2id', salt: 'aeon-chain-pow!', memoryKiB: ARGON_KIB, iterations: 1, parallelism: 1, hashLength: 32 }, rule: 'argon2id(hdr + "|" + nonce) * diff < 2^256' }); } catch (e) { return json(res, 200, { error: String(e.message || e) }); } }
     if (p === '/api/work' && req.method === 'POST') { const d = await body(req); if (now() - (hits.get(ip + 'wf') || 0) < 500) return json(res, 200, { error: 'slow down after a bad share' });   // only failed shares are throttled
