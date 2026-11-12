@@ -1,6 +1,6 @@
 // Aeon Chain cryptography, shared by the node and the browser wallet.
 // ristretto255 group, Pedersen commitments, per-bit range proofs, 16-member MLSAG ring signatures
-// with key images, stealth one-time outputs (classic ECDH or ML-KEM-768 "Faraday" payment detection).
+// with key images, stealth one-time outputs (classic ECDH or ML-KEM-768 "Meridian" payment detection).
 import { RistrettoPoint } from '@noble/curves/ed25519';
 import { sha512 } from '@noble/hashes/sha512';
 import { sha3_256 } from '@noble/hashes/sha3';

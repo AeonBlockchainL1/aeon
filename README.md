@@ -93,10 +93,10 @@ POST /api/faucet  {address}         25 tAEON, once an hour
 
 - **Live:** private testnet with everything in the table above.
 - **Live:** open mining. Mine in the browser at https://aeonblockchain.xyz/mine or with `node miner/miner.js <address>`; block rewards go to your own private address.
-- **Faraday:** spends move from elliptic-curve ring signatures to hash-based proofs, and each spend hides among every output on the chain. Payment detection becomes ML-KEM-768 only.
-- **Mainnet:** genesis with Faraday on from block 1.
+- **Meridian:** spends move from elliptic-curve ring signatures to hash-based proofs, and each spend hides among every output on the chain. Payment detection becomes ML-KEM-768 only.
+- **Mainnet:** genesis with Meridian on from block 1.
 
-The testnet is run by a single node today. Ring signatures and Pedersen commitments are elliptic-curve constructions; the receive side is post-quantum on `aeonq1` addresses, and Faraday is the plan for the spend side.
+The testnet is run by a single node today. Ring signatures and Pedersen commitments are elliptic-curve constructions; the receive side is post-quantum on `aeonq1` addresses, and Meridian is the plan for the spend side.
 
 ## License
 

@@ -19,5 +19,5 @@ Include the transaction or a script that reproduces the issue. `test/crypto.test
 ## Known limits
 
 - The testnet is produced by one node. Consensus rules are enforced, but there is no peer-to-peer network yet.
-- Ring signatures and Pedersen commitments use ristretto255. Payment detection on `aeonq1` addresses uses ML-KEM-768; post-quantum spend proofs are the Faraday upgrade.
+- Ring signatures and Pedersen commitments use ristretto255. Payment detection on `aeonq1` addresses uses ML-KEM-768; post-quantum spend proofs are the Meridian upgrade.
 - Wallet seeds are stored in the browser's local storage. Back them up.

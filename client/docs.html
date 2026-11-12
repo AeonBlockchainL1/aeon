@@ -25,8 +25,8 @@ aeonq1…  quantum: the same keys + an ML-KEM-768 public key (about 1,700 charac
 <h3>Proof of work</h3>
 <p>Blocks are mined with <b>Argon2id</b>, a memory-hard hash. The header holds height, previous hash, timestamp, difficulty, transaction root and coinbase id. A block is valid when <code>argon2id(header | nonce) × difficulty &lt; 2^256</code>. Difficulty retargets every block toward a 30-second block time. The reward is <code>(100M − emitted) / 2^19</code> with a 2.0 tail emission that never ends. Coinbase outputs need 3 confirmations before they can be spent.</p>
 
-<h3>Faraday</h3>
-<p>Faraday is the quantum upgrade. ML-KEM payment detection is live today on <code>aeonq1</code> addresses. Two parts are still ahead. Spends move from elliptic-curve ring signatures to hash-based proofs. The anonymity set grows from 16 outputs to the whole chain. Coins move to the new format once, and the wallet does it for you.</p>
+<h3>Meridian</h3>
+<p>Meridian is the quantum upgrade. ML-KEM payment detection is live today on <code>aeonq1</code> addresses. Two parts are still ahead. Spends move from elliptic-curve ring signatures to hash-based proofs. The anonymity set grows from 16 outputs to the whole chain. Coins move to the new format once, and the wallet does it for you.</p>
 
 <h3>API</h3>
 <pre>GET  /api/work?address=A            block template paying the coinbase to A
@@ -53,7 +53,7 @@ POST /api/faucet  {address}         25 tAEON, once an hour</pre>
 <p><b>Where are my keys?</b> In your browser's local storage, created on your device. The node never sees your seed, view key or ML-KEM secret key. Back up the seed. Clearing site data without it loses the wallet.</p>
 <p><b>Why does sending take a few seconds?</b> Your browser builds the ring signature, 48-bit range proofs for every output and, for quantum addresses, an ML-KEM encapsulation. That work happens on your device so nothing private is sent to the node.</p>
 <p><b>Can the explorer see my balance?</b> No. It shows rings, key images, commitments and ciphertexts. Only the wallet holding the view key or ML-KEM secret key can open an output.</p>
-<p><b>What does a quantum computer break today?</b> Elliptic-curve keys, so it could in theory unmask ECDH payment detection on classic addresses. Payments to <code>aeonq1</code> addresses use ML-KEM-768, a NIST-standard lattice scheme designed to resist that. Faraday extends the same protection to spends.</p>
-<p><b>Why 16?</b> A ring of 16 is a practical size for proof time and transaction size. Faraday removes the limit by hiding each spend among every output.</p>
+<p><b>What does a quantum computer break today?</b> Elliptic-curve keys, so it could in theory unmask ECDH payment detection on classic addresses. Payments to <code>aeonq1</code> addresses use ML-KEM-768, a NIST-standard lattice scheme designed to resist that. Meridian extends the same protection to spends.</p>
+<p><b>Why 16?</b> A ring of 16 is a practical size for proof time and transaction size. Meridian removes the limit by hiding each spend among every output.</p>
 </main>
 <script type="module">import { chrome } from '/common.js'; chrome();</script></body></html>

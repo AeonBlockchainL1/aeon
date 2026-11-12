@@ -4,7 +4,7 @@
 <div class="pagehead"><h1>Aeon Chain: privacy with no expiry date</h1><span class="cap">Aeon Chain whitepaper, version 0.1 (testnet), November 2026</span></div>
 
 <h3>Abstract</h3>
-<p>Aeon Chain is a proof-of-work chain where every transaction is private by default. The sender hides in a ring of 16, the receiver behind a one-time stealth address, and the amount inside a Pedersen commitment with a range proof. Payments to quantum addresses (aeonq1) are detected with ML-KEM-768, the NIST post-quantum key encapsulation standard. The Faraday upgrade moves spends to hash-based proofs over the whole chain, so the last elliptic-curve dependency goes too. The testnet is live, and every rule in this paper is in the public repository and covered by its test suite.</p>
+<p>Aeon Chain is a proof-of-work chain where every transaction is private by default. The sender hides in a ring of 16, the receiver behind a one-time stealth address, and the amount inside a Pedersen commitment with a range proof. Payments to quantum addresses (aeonq1) are detected with ML-KEM-768, the NIST post-quantum key encapsulation standard. The Meridian upgrade moves spends to hash-based proofs over the whole chain, so the last elliptic-curve dependency goes too. The testnet is live, and every rule in this paper is in the public repository and covered by its test suite.</p>
 <h3>1. The problem</h3>
 <p>Public chains publish who paid whom and how much, forever. Anyone can follow a wallet, cluster its addresses and read its history. Privacy coins solved part of this with elliptic-curve cryptography, but a large enough quantum computer breaks elliptic curves. Data recorded today can be unmasked later. Aeon is built so that what is private today stays private after quantum.</p>
 <h3>2. Design goals</h3>
@@ -34,14 +34,14 @@ aeonq1...  quantum: the same keys + an ML-KEM-768 public key</pre>
 <h3>9. Verification without trust</h3>
 <p>Every transaction in the explorer has a "verify in your browser" button. The browser fetches the transaction and its ring members from <code>/api/rawtx/:id</code> and runs the same <code>verifyTx</code> the node runs: every ring signature, every range proof and the commitment balance. The code is open source, and the test suite runs on every push automatically. It covers private sends to <code>aeonq1</code> addresses, rejection of double spends and rejection of forged signatures.</p>
 <p>Cryptography comes from the audited noble libraries: @noble/curves (ristretto255), @noble/hashes (SHA-512, SHA3-256) and @noble/post-quantum (ML-KEM-768). Argon2id is Node's built-in implementation.</p>
-<h3>10. Faraday: the quantum upgrade</h3>
-<p>ML-KEM payment detection is live today. Faraday finishes the job:</p>
+<h3>10. Meridian: the quantum upgrade</h3>
+<p>ML-KEM payment detection is live today. Meridian finishes the job:</p>
 <ol><li>Spends move from elliptic-curve ring signatures to hash-based proofs.</li><li>The anonymity set grows from 16 outputs to the whole chain.</li><li>Payment detection becomes ML-KEM-768 only.</li></ol>
 <p>It is the same chain with no new coin. Each wallet migrates its coins once, automatically.</p>
 <h3>11. $AEON</h3>
 <p>$AEON is the Solana token that funds development and carries the community to mainnet. tAEON is the testnet coin, free from the faucet, used to test every feature before mainnet.</p>
 <h3>12. Roadmap</h3>
-<ul><li>Done: testnet live with explorer, browser wallet and faucet</li><li>Done: $AEON launch</li><li>Done: open mining with Argon2id (browser miner at /mine, CLI miner in miner/)</li><li>Next: Faraday, hash-based spends and full-chain privacy</li><li>Then: mainnet with Faraday from block 1</li></ul>
+<ul><li>Done: testnet live with explorer, browser wallet and faucet</li><li>Done: $AEON launch</li><li>Done: open mining with Argon2id (browser miner at /mine, CLI miner in miner/)</li><li>Next: Meridian, hash-based spends and full-chain privacy</li><li>Then: mainnet with Meridian from block 1</li></ul>
 <h3>Links</h3>
 <ul><li>Testnet, explorer and wallet: <a href="https://aeonblockchain.xyz">https://aeonblockchain.xyz</a></li><li>Docs: <a href="https://aeonblockchain.xyz/docs">https://aeonblockchain.xyz/docs</a></li><li>Code: <a href="https://github.com/AeonBlockchainL1/aeon">https://github.com/AeonBlockchainL1/aeon</a></li><li>X: <a href="https://x.com/AeonBlockchain">https://x.com/AeonBlockchain</a></li></ul>
 </main>

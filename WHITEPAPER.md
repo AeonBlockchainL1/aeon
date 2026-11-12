@@ -4,7 +4,7 @@ Aeon Chain whitepaper, version 0.1 (testnet), November 2026
 
 ## Abstract
 
-Aeon Chain is a proof-of-work chain where every transaction is private by default. The sender hides in a ring of 16, the receiver behind a one-time stealth address, and the amount inside a Pedersen commitment with a range proof. Payments to quantum addresses (aeonq1) are detected with ML-KEM-768, the NIST post-quantum key encapsulation standard. The Faraday upgrade moves spends to hash-based proofs over the whole chain, so the last elliptic-curve dependency goes too. The testnet is live, and every rule in this paper is in the public repository and covered by its test suite.
+Aeon Chain is a proof-of-work chain where every transaction is private by default. The sender hides in a ring of 16, the receiver behind a one-time stealth address, and the amount inside a Pedersen commitment with a range proof. Payments to quantum addresses (aeonq1) are detected with ML-KEM-768, the NIST post-quantum key encapsulation standard. The Meridian upgrade moves spends to hash-based proofs over the whole chain, so the last elliptic-curve dependency goes too. The testnet is live, and every rule in this paper is in the public repository and covered by its test suite.
 
 ## 1. The problem
 
@@ -82,9 +82,9 @@ Every transaction in the explorer has a "verify in your browser" button. The bro
 
 Cryptography comes from the audited noble libraries: @noble/curves (ristretto255), @noble/hashes (SHA-512, SHA3-256) and @noble/post-quantum (ML-KEM-768). Argon2id is Node's built-in implementation.
 
-## 10. Faraday: the quantum upgrade
+## 10. Meridian: the quantum upgrade
 
-ML-KEM payment detection is live today. Faraday finishes the job:
+ML-KEM payment detection is live today. Meridian finishes the job:
 
 1. Spends move from elliptic-curve ring signatures to hash-based proofs.
 2. The anonymity set grows from 16 outputs to the whole chain.
@@ -101,8 +101,8 @@ $AEON is the Solana token that funds development and carries the community to ma
 - Done: testnet live with explorer, browser wallet and faucet
 - Done: $AEON launch
 - Done: open mining with Argon2id (browser miner at /mine, CLI miner in miner/)
-- Next: Faraday, hash-based spends and full-chain privacy
-- Then: mainnet with Faraday from block 1
+- Next: Meridian, hash-based spends and full-chain privacy
+- Then: mainnet with Meridian from block 1
 
 ## Links
 
