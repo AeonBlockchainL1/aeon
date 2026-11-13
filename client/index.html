@@ -80,10 +80,12 @@ section{position:relative}
 .cmp{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:60px}.cmp>div{padding:30px;border-radius:28px;border:1px solid var(--line)}.cmp>div:first-child{border-color:rgba(167,139,250,.6);background:linear-gradient(180deg,rgba(139,92,246,.2),rgba(139,92,246,.03));box-shadow:0 30px 80px -40px #8b5cf6}
 .cmp h4{font:500 40px/1 var(--display);letter-spacing:-.03em;margin:12px 0 18px}.cmp>div:not(:first-child) h4{color:var(--steel)}.cmp .k{border-top:1px solid var(--line);padding:13px 0}.cmp .k span{display:block;font:400 10px var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--fog);margin-bottom:4px}.cmp .k b{font-weight:400;font-size:15px}
 .road{display:grid;grid-template-columns:repeat(5,1fr);gap:16px;margin-top:60px}.road>div{padding:24px;border-radius:24px;border:1px solid var(--line);background:rgba(230,222,250,.03)}.road .ph{display:flex;justify-content:space-between;font:400 10px var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--fog);margin-bottom:14px}.road .ph b{color:var(--q);font-weight:400}.road p{font-size:14px;color:var(--fog);line-height:1.55;font-weight:300}.road strong{color:var(--ice);font-weight:500;display:block;font-size:19px;margin-bottom:6px}
+.rw{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:60px}.rw>div{padding:30px;border-radius:28px;border:1px solid var(--line);background:linear-gradient(180deg,rgba(230,222,250,.06),rgba(230,222,250,.015));display:flex;flex-direction:column}.rw h4{font:500 30px/1.1 var(--display);letter-spacing:-.02em;margin:16px 0 12px;color:var(--head)}.rw p{color:var(--fog);font-size:15px;line-height:1.6;font-weight:300;flex:1}.rw a{margin-top:22px;font:400 11px var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--q)}
+.rwbar{display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap;margin-top:18px;padding:26px 30px;border-radius:28px;border:1px solid rgba(167,139,250,.6);background:linear-gradient(180deg,rgba(139,92,246,.2),rgba(139,92,246,.03));box-shadow:0 30px 80px -40px #8b5cf6}.rwbar b{font:500 clamp(20px,2.2vw,28px) var(--display);letter-spacing:-.02em;color:var(--head)}.rwbar b em{font-style:normal;color:var(--q)}
 .faq{max-width:880px;margin:60px auto 0}.faq details{border:1px solid var(--line);border-radius:24px;padding:0 26px;margin-bottom:12px;background:rgba(230,222,250,.03)}.faq summary{cursor:pointer;list-style:none;padding:22px 0;font:500 19px var(--display);display:flex;justify-content:space-between;gap:20px}.faq summary:after{content:'+';color:var(--q);font-weight:300;font-size:24px;line-height:1}.faq details[open] summary:after{content:'–'}.faq summary::-webkit-details-marker{display:none}.faq p{color:var(--fog);font-size:16px;line-height:1.65;padding:0 0 24px;font-weight:300}
 .last{text-align:center;padding:60px 20px 20px}.last .row{justify-content:center;margin-top:34px}
 .rv{opacity:0;transform:translateY(24px);transition:opacity .8s ease,transform .8s ease}.rv.in{opacity:1;transform:none}
-@media(max-width:900px){.hfoot{flex-direction:column;align-items:flex-start;bottom:86px}.hbadge{display:none}.mani,.steps3,.duo{grid-template-columns:1fr}.steps3 p{margin-left:0}.nums{grid-template-columns:1fr 1fr}.cmp,.road{grid-template-columns:1fr}.tile{width:150px;height:150px;border-radius:34px}.tile:after{inset:-26px}.tiles{gap:90px;margin:90px 0 80px}.orb{flex-basis:270px;height:270px;padding:30px}.b{padding:15px 24px}.ann a{display:none}.soc,.cue{display:none}.hfoot{bottom:70px}.light{border-radius:90px}}
+@media(max-width:900px){.hfoot{flex-direction:column;align-items:flex-start;bottom:86px}.hbadge{display:none}.mani,.steps3,.duo{grid-template-columns:1fr}.steps3 p{margin-left:0}.nums{grid-template-columns:1fr 1fr}.cmp,.road,.rw{grid-template-columns:1fr}.tile{width:150px;height:150px;border-radius:34px}.tile:after{inset:-26px}.tiles{gap:90px;margin:90px 0 80px}.orb{flex-basis:270px;height:270px;padding:30px}.b{padding:15px 24px}.ann a{display:none}.soc,.cue{display:none}.hfoot{bottom:70px}.light{border-radius:90px}}
 @media(prefers-reduced-motion:reduce){.mq,.track,.fan .p,.glyphs svg{animation:none}}
 </style></head><body class="has-ann">
 <div class="ann"><b>New</b><span>Dead Drops are live on testnet: attach a sealed note to any payment. Only the receiver can read it.</span><a href="/docs#drops">Read more</a></div>
@@ -168,6 +170,16 @@ section{position:relative}
   </div>
 </div></section>
 
+<section class="blk" id="rewards"><div class="wrap">
+  <h2>Three ways to earn before mainnet</h2><p class="sub">Backing Aeon early earns rewards. Hold the token, mine the testnet or use the chain, and your rewards are airdropped when mainnet goes live.</p>
+  <div class="rw">
+    <div class="rv"><span class="cap">01 · hold</span><h4>Buy $AEON early</h4><p>$AEON is live on Robinhood Chain. Early buyers who hold it earn rewards for backing the chain before mainnet.</p><a href="#ca">Contract address →</a></div>
+    <div class="rv"><span class="cap">02 · mine</span><h4>Mine the testnet</h4><p>Paste an Aeon address and start the miner in a browser tab. The blocks you mine today earn rewards for mainnet.</p><a href="/mine">Start mining →</a></div>
+    <div class="rv"><span class="cap">03 · use</span><h4>Use the chain</h4><p>Create a wallet, send private payments and check them in the explorer. Activity on the testnet earns rewards.</p><a href="/wallet">Open wallet →</a></div>
+  </div>
+  <div class="rwbar rv"><b>All three are airdropped on <em>mainnet</em>.</b><span class="cap">start today · the testnet is live</span></div>
+</div></section>
+
 <section class="blk" id="roadmap"><div class="wrap">
   <h2>From testnet to Meridian</h2>
   <div class="road">
@@ -175,7 +187,7 @@ section{position:relative}
     <div class="rv"><div class="ph"><span>phase 2</span><b>now</b></div><p><strong>$AEON</strong>The token launches on Robinhood Chain and carries the project to mainnet.</p></div>
     <div class="rv"><div class="ph"><span>phase 3</span><b>live</b></div><p><strong>Open mining</strong>Anyone can mine in the browser or with the CLI miner, rewards paid to their own private address.</p></div>
     <div class="rv"><div class="ph"><span>phase 4</span><b>planned</b></div><p><strong>Meridian</strong>Hash-based spend proofs and full-chain anonymity, specified, tested and reviewed in the open.</p></div>
-    <div class="rv"><div class="ph"><span>phase 5</span><b>after review</b></div><p><strong>Mainnet</strong>Genesis of the main chain with Meridian on from block 1.</p></div>
+    <div class="rv"><div class="ph"><span>phase 5</span><b>after review</b></div><p><strong>Mainnet</strong>Genesis of the main chain with Meridian on from block 1, and the airdrop of early rewards.</p></div>
   </div>
 </div></section>
 
@@ -188,6 +200,7 @@ section{position:relative}
     <details><summary>Where are my keys?</summary><p>In your browser. The wallet creates a 32-byte seed on your device and derives the spend key, view key and ML-KEM key from it. The node never sees them. Back up the seed: it is the only way to restore the wallet.</p></details>
     <details><summary>How do I mine?</summary><p>Open /mine, paste an Aeon address and press start. Your browser runs Argon2id proof of work and block rewards are paid to that address as private outputs. For more hashrate, run the command-line miner from the repository against the public node or your own.</p></details>
     <details><summary>What is the difference between tAEON and $AEON?</summary><p>tAEON is the testnet coin you get from the faucet and from mining. $AEON is the Robinhood Chain token that funds the work and carries the project to mainnet.</p></details>
+    <details><summary>How do I earn rewards before mainnet?</summary><p>There are three ways, and you can do all of them. Hold $AEON on Robinhood Chain: early buyers earn rewards for backing the chain. Mine the testnet at /mine: the blocks you mine earn rewards. Use the chain: sending private payments from the wallet and checking them in the explorer earns rewards. Rewards from all three are airdropped when mainnet launches.</p></details>
     <details><summary>Can I run a node?</summary><p>Yes. The node, explorer and wallet are one open-source Node.js program. Clone the repository, run npm install and npm start, and you have the full chain on your machine.</p></details>
     <details><summary>When does mainnet launch?</summary><p>After Meridian is specified, tested and reviewed in the open. Mainnet genesis ships with Meridian active from block 1.</p></details>
   </div>
