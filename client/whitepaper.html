@@ -36,6 +36,12 @@ aeonq1...  quantum: the same keys + an ML-KEM-768 public key</pre>
 <h3>9. Verification without trust</h3>
 <p>Every transaction in the explorer has a "verify in your browser" button. The browser fetches the transaction and its ring members from <code>/api/rawtx/:id</code> and runs the same <code>verifyTx</code> the node runs: every ring signature, every range proof and the commitment balance. The code is open source, and the test suite runs on every push automatically. It covers private sends to <code>aeonq1</code> addresses, rejection of double spends and rejection of forged signatures.</p>
 <p>Cryptography comes from the audited noble libraries: @noble/curves (ristretto255), @noble/hashes (SHA-512, SHA3-256) and @noble/post-quantum (ML-KEM-768). Argon2id is Node's built-in implementation.</p>
+<h3 id="proofs">9.1 Payment proofs</h3>
+<p>Privacy by default needs a way to disclose by choice. The sender of a transaction can prove to anyone that output <code>i</code> pays address <code>(A, B)</code> the amount <code>v</code>. The proof carries the output's derivation scalar <code>k</code>, the commitment mask <code>x</code>, the amount, an optional message and a Schnorr signature made with the transaction secret <code>r</code>.</p>
+<pre>P = k·G + A                 the output belongs to that address
+C = x·G + v·H               the amount opens the commitment
+c = Hs("aeon/proof", txid, i, k, x, v, address, message, s·G + c·R)   only the holder of r can sign</pre>
+<p>Finding another address that fits <code>P</code> means solving a discrete logarithm, and <code>R = r·G</code> is already in the transaction, so the signature shows the proof came from whoever built it. The shared secret is never revealed, so the dead drop stays sealed and every other output stays closed. The check runs in the browser.</p>
 <h3>10. Meridian: the quantum upgrade</h3>
 <p>ML-KEM payment detection is live today. Meridian finishes the job:</p>
 <ol><li>Spends move from elliptic-curve ring signatures to hash-based proofs.</li><li>The anonymity set grows from 16 outputs to the whole chain.</li><li>Payment detection becomes ML-KEM-768 only.</li></ol>

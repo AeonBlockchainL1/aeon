@@ -94,6 +94,18 @@ Every transaction in the explorer has a "verify in your browser" button. The bro
 
 Cryptography comes from the audited noble libraries: @noble/curves (ristretto255), @noble/hashes (SHA-512, SHA3-256) and @noble/post-quantum (ML-KEM-768). Argon2id is Node's built-in implementation.
 
+### 9.1 Payment proofs
+
+Privacy by default needs a way to disclose by choice. The sender of a transaction can prove to anyone that output i pays address (A, B) the amount v. The proof carries the output's derivation scalar k, the commitment mask x, the amount, an optional message and a Schnorr signature made with the transaction secret r.
+
+```
+P = k·G + A                 the output belongs to that address
+C = x·G + v·H               the amount opens the commitment
+c = Hs("aeon/proof", txid, i, k, x, v, address, message, s·G + c·R)   only the holder of r can sign
+```
+
+Finding another address that fits P means solving a discrete logarithm, and R = r·G is already in the transaction, so the signature shows the proof came from whoever built it. The shared secret is never revealed, so the dead drop stays sealed and every other output stays closed. The check runs in the browser.
+
 ## 10. Meridian: the quantum upgrade
 
 ML-KEM payment detection is live today. Meridian finishes the job:

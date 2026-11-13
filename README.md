@@ -20,6 +20,7 @@ One Node.js process is the node, the block explorer and the browser wallet. Ever
 | Hidden receiver | Every output goes to a one-time address `P = Hs(secret, i)·G + A` | `makeOutput`, `scan` |
 | Quantum receive | `aeonq1` addresses carry an ML-KEM-768 key. The sender encapsulates, the 1,088-byte ciphertext rides with the output, only the receiver can decapsulate | `makeOutput`, `scan` |
 | Dead drops | Every new output carries a 160-byte sealed note (up to 140 bytes of text), encrypted with the output's shared secret and always present, so a message cannot be told apart from no message | `sealNote`, `openNote`, `scan` |
+| Payment proofs | The sender can prove that one output pays a given address a given amount. The proof opens that single output, is signed with the transaction secret and leaves the dead drop sealed. Checked in the browser | `makeProof`, `verifyProof`, `client/explorer.html` |
 | Hidden amount | Pedersen commitments `C = x·G + v·H`, a 48-bit range proof per output, and `Σ inputs = Σ outputs + fee·H` | `rangeProve`, `rangeVerify`, `verifyTx` |
 | Consensus | Argon2id proof of work (memory-hard), difficulty retargets every block toward 30 s | `server/index.js` `mine` |
 | Wallet | Keys are made in the browser from a 32-byte seed. The browser scans outputs, builds ring signatures and range proofs, then submits | `client/wallet.html` |
@@ -52,7 +53,7 @@ Or open https://aeonblockchain.xyz/mine and mine in the browser (Argon2id in Web
 ## Test it
 
 ```bash
-npm test               # crypto: stealth scan, ML-KEM, range proofs, ring signatures, forgeries, double spends
+npm test               # crypto: stealth scan, ML-KEM, range proofs, ring signatures, forgeries, double spends, sealed notes, payment proofs
 npm run test:e2e       # boots a node, mines, faucet → wallet scan → private send to a aeonq1 address → receiver finds it
 ```
 

@@ -2,6 +2,15 @@
 
 All notable changes to Aeon Chain are recorded here. Versions follow [Semantic Versioning](https://semver.org).
 
+## [0.3.0-testnet] - 2026-11-12
+
+### Added
+- Payment proofs: the sender of a transaction can prove that one of its outputs pays a given address a given amount. A proof carries the output's derivation scalar, the commitment mask, the amount, an optional message of up to 140 characters and a Schnorr signature made with the transaction secret. It opens that single output and leaves the dead drop sealed.
+- Wallet: a sent payments list with copy proof and check buttons, and a message field for the proof. The proving data stays on the sending device.
+- Explorer: a check proof box and a `#/proof/…` page that verifies a proof in the browser against the transaction on chain.
+- `buildTx` returns the proving secrets on a non-enumerable `secrets` property, so they are never serialised or sent to a node.
+- 10 new unit checks and 3 new end-to-end checks for payment proofs. No consensus change: existing transactions and nodes are unaffected.
+
 ## [0.2.0-testnet] - 2026-11-12
 
 ### Added
