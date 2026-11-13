@@ -10,12 +10,27 @@
   "@noble/post-quantum/ml-kem":"/vendor/post-quantum/esm/ml-kem.js"}}</script></head><body>
 <main class="wrap app"><div class="pagehead"><h1>Explorer</h1><span class="cap">aeon testnet · every transaction private</span></div>
   <form class="srch" id="sf" style="margin:0 0 22px"><input id="q" placeholder="block height, block hash, tx id or key image" autocomplete="off"><button class="btn solid">search</button></form>
+  <form class="srch" id="pf" style="margin:0 0 22px"><input id="pq" placeholder="paste a payment proof (aeonproof1…) to check it in your browser" autocomplete="off"><button class="btn gh">check proof</button></form>
   <div id="view"></div>
 </main>
 <script type="module">
 import { chrome, $, api, aeon, short, ago, toast } from '/common.js'; chrome();
 const V = $('view'); let timer;
 $('sf').onsubmit = async (e) => { e.preventDefault(); const r = await api('/api/search?q=' + encodeURIComponent($('q').value.trim())); if (r.error) return toast(r.error, true); location.hash = '#/' + r.type + '/' + r.id; };
+$('pf').onsubmit = (e) => { e.preventDefault(); const v = $('pq').value.replace(/\s+/g, ''); if (!v) return; if (location.hash === '#/proof/' + v) route(); else location.hash = '#/proof/' + v; };
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+// a payment proof is checked here, in the browser: the node only supplies the transaction the proof names
+async function proof(str) { V.innerHTML = '<div class="panel"><div class="hd"><span>payment proof</span><span>checked in your browser</span></div><div style="padding:6px 18px 14px" id="pout"><div class="vrow" style="border:0"><span>loading the crypto library</span><span>…</span></div></div></div>';
+  const O = $('pout'), rows = [], row = (k, v, cls = 'ac') => rows.push(`<div class="vrow"><span>${k}</span><span class="${cls}" style="text-align:right;word-break:break-all">${v}</span></div>`), fail = (m) => { O.innerHTML = rows.join('') + `<div class="vrow" style="border:0"><span>proof rejected: ${esc(m)}</span><span class="bad">✕ not valid</span></div>`; };
+  const K = await import('/rct.js'); let p; try { p = K.parseProof(decodeURIComponent(str)); } catch (e) { return fail(String(e)); }
+  const t = await api('/api/tx/' + p.t); if (t.error) return fail('the node has no transaction ' + short(p.t, 12));
+  row('transaction', `✓ <a href="#/tx/${p.t}">${short(p.t, 12)}</a> · ${t.h != null ? 'block ' + t.h + ' · ' + t.confirmations + ' confirmations' : 'in mempool'}`);
+  let r; const t0 = performance.now(); try { r = K.verifyProof(decodeURIComponent(str), t); } catch (e) { return fail(String(e)); }
+  row('made by the sender', '✓ signed with the transaction key'); row('output ' + r.index + ' pays', `✓ ${r.quantum ? '<span class="q">quantum address</span> ' : 'classic address '}${short(r.address, 16)}`);
+  row('amount', `✓ ${aeon(r.amount)} tAEON, opens the commitment`); if (r.memo) row('message from the sender', esc(r.memo), '');
+  row('everything else', 'still private: other outputs, the ring, the dead drop', 'dim');
+  O.innerHTML = rows.join('') + `<div class="vrow" style="border:0"><span>valid. checked locally in ${((performance.now() - t0) / 1000).toFixed(2)}s</span><span class="ac">✓ payment proven</span></div><div class="dim" style="font-size:12px;padding-top:10px">paid address (click to copy)</div><div id="paddr" style="font:400 12px var(--mono);word-break:break-all;cursor:pointer;padding-top:4px">${esc(r.address)}</div>`;
+  $('paddr').onclick = () => navigator.clipboard.writeText(r.address).then(() => toast('address copied')); }
 const tags = (t) => (t.coinbase ? '<span class="tag ac">coinbase</span>' : '<span class="tag">ring 16</span>') + (t.quantum ? ` <span class="tag q">ML-KEM ×${t.quantum}</span>` : '');
 async function home() {
   const [s, b, t] = await Promise.all([api('/api/stats'), api('/api/blocks?limit=12'), api('/api/txs')]);
@@ -49,6 +64,6 @@ async function verify(id) { const O = $('vout'), b = $('vf'); b.disabled = true;
   row('rings', true, tx.vin.length + ' × 16 members'); row('ring signatures (MLSAG)', !err || !/ring/.test(err), tx.vin.length + ' valid'); row('range proofs', !err || !/range/.test(err), tx.vout.length + ' × 48-bit'); row('inputs = outputs + fee', !err || !/balance/.test(err), 'balanced as curve points'); row('quantum outputs (ML-KEM-768)', true, tx.vout.filter((o) => o.ct).length + (tx.vout.filter((o) => o.ct).length === 1 ? ' ciphertext' : ' ciphertexts'));
   rows.push(`<div class="vrow" style="border:0"><span>${err ? 'verification failed: ' + err : 'valid. checked locally in ' + ((performance.now() - t0) / 1000).toFixed(1) + 's'}</span><span class="${err ? 'bad' : 'ac'}">${err ? '✕' : '✓ verified'}</span></div>`); O.innerHTML = rows.join(''); b.disabled = false; }
 async function route() { clearInterval(timer); const [, type, id] = location.hash.split('/'); window.scrollTo(0, 0);
-  if (type === 'block') return block(id); if (type === 'tx') { await tx(id); const b = $('vf'); if (b) b.onclick = () => verify(id); return; } await home(); timer = setInterval(home, 6000); }
+  if (type === 'proof') return proof(id); if (type === 'block') return block(id); if (type === 'tx') { await tx(id); const b = $('vf'); if (b) b.onclick = () => verify(id); return; } await home(); timer = setInterval(home, 6000); }
 addEventListener('hashchange', route); route();
 </script></body></html>
