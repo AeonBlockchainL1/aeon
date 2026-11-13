@@ -33,4 +33,9 @@ mine = await sync(alice); ok(mine.find((m) => m.gidx === u.gidx).spent === 'chai
 const d = await get('/api/tx/' + sent.id); ok(d.vout[0].quantum && d.vout[0].ctBytes === 1088 && d.vout[0].amount === null, 'explorer: quantum output, 1088-byte ciphertext, no amount');
 ok(d.vout.every((o) => o.noteBytes === 160) && !JSON.stringify(d).includes('dead drop for bob'), 'explorer: every output shows a 160-byte sealed note and no plaintext');
 ok((await get('/api/search?q=' + tx.vin[0].ki)).id === sent.id, 'search by key image finds the tx');
+// payment proof: alice proves the payment to bob, checked against what the node serves publicly
+const proof = K.makeProof(sent.id, tx.secrets, 0, bob.qaddress, 'e2e invoice'), pr = K.verifyProof(proof, d);
+ok(pr.amount === 10_000_000n && pr.address === bob.qaddress && pr.memo === 'e2e invoice', 'payment proof: alice proves 10 AEON to bob against the public transaction');
+let wrong = false; try { K.verifyProof(K.makeProof(sent.id, tx.secrets, 0, alice.qaddress), d); } catch { wrong = true; } ok(wrong, 'payment proof naming another receiver is rejected');
+let other = false; try { K.verifyProof(proof, await get('/api/tx/' + f.id)); } catch { other = true; } ok(other, 'payment proof does not verify against another transaction');
 console.log(`\n${fail ? 'FAILED' : 'ALL PASS'} (${pass}/${pass + fail})`); process.exit(fail ? 1 : 0);

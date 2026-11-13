@@ -50,4 +50,19 @@ const n2 = JSON.parse(JSON.stringify(ntx)); n2.vout[0].note = n2.vout[0].note + 
 const n3 = JSON.parse(JSON.stringify(tx)); n3.vout.forEach((o) => delete o.note); ok(K.verifyTx(n3, getOut, () => false) !== null, 'stripping notes from a signed transaction breaks it');
 let long = false; try { K.buildTx([inp], [{ address: bob.address, v: 49_990_000n, note: 'x'.repeat(141) }], 10_000n); } catch { long = true; } ok(long, 'a note over 140 bytes is refused');
 const t5 = JSON.parse(JSON.stringify(tx)); t5.vin[0].ring[3] = (t5.vin[0].ring[3] + 1) % 40; ok(K.verifyTx(t5, getOut, () => false) !== null, 'swapping a ring member breaks it');
+// payment proofs: the sender opens exactly one output to whoever holds the proof
+const ptx = K.buildTx([inp], [{ address: bob.qaddress, v: 30_000_000n, note: 'still sealed' }, { address: alice.address, v: 19_990_000n }], 10_000n), pid = K.txhash(ptx);
+ok(ptx.secrets && !JSON.stringify(ptx).includes(ptx.secrets.r) && !('secrets' in JSON.parse(JSON.stringify(ptx))), 'the proving secrets are never serialised with the transaction');
+const proof = K.makeProof(pid, ptx.secrets, 0, bob.qaddress, 'invoice 42');
+const pv = K.verifyProof(proof, ptx); ok(pv.amount === 30_000_000n && pv.address === bob.qaddress && pv.quantum && pv.memo === 'invoice 42', 'a payment proof to a quantum address verifies: 30 AEON, message intact');
+const cproof = K.makeProof(K.txhash(ctx), ctx.secrets, 0, bob.address); ok(K.verifyProof(cproof, ctx).amount === 30_000_000n, 'a payment proof to a classic address verifies');
+const throws = (f) => { try { f(); return false; } catch (e) { return String(e); } };
+ok(/does not pay/.test(throws(() => K.verifyProof(K.makeProof(pid, ptx.secrets, 0, eve.qaddress), ptx))), 'a proof naming the wrong receiver is rejected');
+const edit = (f) => { const p = K.parseProof(proof); f(p); return K.PROOF_PREFIX + K.b58(new TextEncoder().encode(JSON.stringify(p))); };
+ok(/commitment/.test(throws(() => K.verifyProof(edit((p) => (p.v = '40000000')), ptx))), 'a proof with a changed amount is rejected');
+ok(/not signed/.test(throws(() => K.verifyProof(edit((p) => (p.n = 'invoice 43')), ptx))), 'a proof with a changed message is rejected');
+ok(throws(() => K.verifyProof(proof, ntx)) !== false, 'a proof does not verify against a different transaction');
+const forged = { r: K.sh(K.rand()), outs: ptx.secrets.outs }; ok(/not signed/.test(throws(() => K.verifyProof(K.makeProof(pid, forged, 0, bob.qaddress), ptx))), 'a proof made without the transaction secret is rejected');
+ok(K.scan(bob, { ...ptx.vout[0] }, ptx.R, 0).note === 'still sealed' && !proof.includes(Buffer.from('still sealed').toString('hex')) && throws(() => K.verifyProof(K.makeProof(pid, ptx.secrets, 1, bob.qaddress), ptx)) !== false, 'a proof opens one output only: the note stays sealed and the change output stays closed');
+ok(throws(() => K.parseProof(proof.slice(0, -9))) !== false && throws(() => K.parseProof('hello')) !== false, 'a truncated or foreign string is refused');
 console.log(`\n${fail ? 'FAILED' : 'ALL PASS'} (${pass}/${pass + fail}) in ${Date.now() - t0} ms`); process.exit(fail ? 1 : 0);
