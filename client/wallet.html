@@ -22,6 +22,8 @@
     <div class="panel" style="margin-top:18px"><div class="hd"><span>send privately</span><span>fee 0.01 tAEON · ring 16</span></div><div style="padding:18px">
       <label style="margin-top:0">to (aeon1… or aeonq1…)</label><textarea id="to" rows="2"></textarea><label>dead drop: a sealed note for the receiver <span class="dim">(optional · <span id="nc">0</span>/140 bytes)</span></label><input id="note" style="width:100%" placeholder="only the receiver's wallet can find and read this" autocomplete="off"><label>amount</label><div class="row"><input id="amt" type="number" min="0" step="0.000001" style="flex:1" placeholder="0.0"><button class="btn gh" id="max">max</button><button class="btn solid" id="send">send</button></div>
       <div class="prog" id="prog"></div></div></div>
+    <div class="panel" style="margin-top:18px"><div class="hd"><span>sent payments</span><span>prove any of them to anyone</span></div><div style="padding:14px 18px 4px"><p class="dim" style="font-size:12px">A payment proof shows one person that this wallet paid one address one amount. It opens that single output and nothing else: your balance, your other payments and the dead drop stay private. Proofs are made from the keys kept on this device.</p>
+      <label>message to put inside the proof <span class="dim">(optional, for example an invoice number)</span></label><input id="memo" style="width:100%" maxlength="140" placeholder="invoice 42" autocomplete="off"></div><div class="list" id="sent" style="margin-top:10px"></div></div>
     <div class="panel" style="margin-top:18px"><div class="hd"><span>dead drops</span><span>sealed notes sent to this wallet</span></div><div class="list" id="drops"></div></div>
     <div class="panel" style="margin-top:18px"><div class="hd"><span>your outputs</span><span>only this wallet can see these</span></div><div class="list" id="outs"></div></div>
     <div class="panel" style="margin-top:18px"><div class="hd"><span>seed</span><span class="bad">anyone with this controls the coins</span></div><div style="padding:18px" class="row"><button class="btn gh" id="showSeed">show seed</button><button class="btn gh" id="forget">forget wallet</button><code id="seed" style="word-break:break-all;flex:1"></code></div></div>
@@ -31,8 +33,8 @@
 import { chrome, $, api, aeon, short, toast, copy } from '/common.js'; import * as K from '/rct.js'; chrome();
 const FEE = 10_000n, MAT = 3; let w, st, busy = false;
 const key = () => 'aeon_w_' + w.address.slice(4, 16);
-const load = () => { try { const j = JSON.parse(localStorage.getItem(key())); if (j) return { next: j.next, outs: j.outs.map((o) => ({ ...o, v: BigInt(o.v), mask: BigInt(o.mask), x: BigInt(o.x) })) }; } catch {} return { next: 0, outs: [] }; };
-const persist = () => { try { localStorage.setItem(key(), JSON.stringify({ next: st.next, outs: st.outs.map((o) => ({ ...o, v: String(o.v), mask: String(o.mask), x: String(o.x) })) })); } catch {} };
+const load = () => { try { const j = JSON.parse(localStorage.getItem(key())); if (j) return { next: j.next, sent: j.sent || [], outs: j.outs.map((o) => ({ ...o, v: BigInt(o.v), mask: BigInt(o.mask), x: BigInt(o.x) })) }; } catch {} return { next: 0, outs: [], sent: [] }; };
+const persist = () => { try { localStorage.setItem(key(), JSON.stringify({ next: st.next, sent: st.sent, outs: st.outs.map((o) => ({ ...o, v: String(o.v), mask: String(o.mask), x: String(o.x) })) })); } catch {} };
 function open(seed) { w = K.wallet(seed); try { localStorage.setItem('aeon_seed', w.seed); } catch {} st = load(); $('setup').hidden = true; $('app').hidden = false;
   $('a1').querySelector('code').textContent = w.address; $('a2').querySelector('code').textContent = w.qaddress; $('a1').onclick = () => copy(w.address, 'address'); $('a2').onclick = () => copy(w.qaddress, 'quantum address'); sync(); }
 let height = 0;
@@ -47,13 +49,17 @@ const unspent = () => st.outs.filter((o) => !o.spent), spendable = () => unspent
 function render() { const u = unspent(), tot = u.reduce((a, o) => a + o.v, 0n), sp = spendable().reduce((a, o) => a + o.v, 0n); $('bal').textContent = aeon(tot);
   $('pend').textContent = tot > sp ? `${aeon(tot - sp)} unlocking (needs ${MAT} confirmations)` : st.outs.some((o) => o.spent === 'pool') ? 'a send is waiting for its block' : '';
   $('outs').innerHTML = [...st.outs].reverse().map((o) => `<a href="/explorer#/tx/${o.txid}"><span class="${o.spent ? 'dim' : 'h'}">${aeon(o.v)}</span><span class="mono-trunc">${o.P}</span><span>${o.quantum ? '<span class="tag q">ML-KEM</span> ' : ''}${o.spent ? '<span class="tag">spent</span>' : height - o.h < MAT ? '<span class="tag ac">locked</span>' : '<span class="tag ac">unspent</span>'}</span></a>`).join('') || '<div class="it dim">nothing yet: take a faucet drip</div>';
+  $('sent').innerHTML = [...st.sent].reverse().map((p, k) => `<div class="it" style="display:flex;gap:14px;align-items:center"><span class="h">${aeon(p.v)}</span><a class="mono-trunc" style="flex:1" href="/explorer#/tx/${p.txid}">to ${short(p.to, 14)}</a><span class="dim">${new Date(p.ts).toISOString().slice(0, 16).replace('T', ' ')}</span><button class="btn gh" data-proof="${st.sent.length - 1 - k}" style="padding:6px 12px">copy proof</button><a class="btn gh" data-check="${st.sent.length - 1 - k}" style="padding:6px 12px" href="#">check</a></div>`).join('') || '<div class="it dim">nothing sent from this device yet. Payments you send from here can be proven later.</div>';
   const esc = (s) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   $('drops').innerHTML = [...st.outs].reverse().filter((o) => o.note).map((o) => `<a href="/explorer#/tx/${o.txid}" style="align-items:flex-start"><span class="h">${aeon(o.v)}</span><span style="flex:1;white-space:normal;word-break:break-word;color:var(--ice)">${esc(o.note)}</span><span>${o.quantum ? '<span class="tag q">ML-KEM</span> ' : '<span class="tag">ECDH</span> '}<span class="dim">block ${o.h}</span></span></a>`).join('') || '<div class="it dim">no notes yet. Anyone who pays this wallet can attach one, and only you can open it.</div>'; }
 $('mk').onclick = () => open(); $('rs').onclick = () => { const s = $('seedIn').value.trim(); if (!/^[0-9a-f]{64}$/i.test(s)) return toast('seed is 64 hex characters', true); open(s.toLowerCase()); };
-$('rescan').onclick = () => { st = { next: 0, outs: [] }; sync(); };
+$('rescan').onclick = () => { st = { next: 0, outs: [], sent: st.sent }; sync(); };
 $('drip').onclick = async () => { const r = await api('/api/faucet', { address: Math.random() < 0.5 ? w.qaddress : w.address }); if (r.error) return toast(r.error, true); toast('25 tAEON on the way in a private tx'); };
 $('max').onclick = () => { const s = spendable().reduce((a, o) => a + o.v, 0n) - FEE; $('amt').value = s > 0n ? (Number(s) / 1e6).toFixed(6) : ''; };
 const noteLen = () => new TextEncoder().encode($('note').value).length; $('note').oninput = () => { const n = noteLen(); $('nc').textContent = n; $('nc').style.color = n > K.NOTE_MAX ? 'var(--bad)' : ''; };
+const proofOf = (k) => { const p = st.sent[k]; return K.makeProof(p.txid, p.sec, 0, p.to, $('memo').value.trim()); };
+$('sent').onclick = (e) => { const b = e.target.closest('[data-proof],[data-check]'); if (!b) return; e.preventDefault();
+  try { if (b.dataset.proof != null) copy(proofOf(+b.dataset.proof), 'payment proof'); else location.href = '/explorer#/proof/' + proofOf(+b.dataset.check); } catch (err) { toast(String(err), true); } };
 $('showSeed').onclick = () => ($('seed').textContent = $('seed').textContent ? '' : w.seed);
 $('forget').onclick = () => { if (!confirm('Forget this wallet on this device? Without the seed the coins are gone.')) return; try { localStorage.removeItem('aeon_seed'); localStorage.removeItem(key()); } catch {} location.reload(); };
 $('send').onclick = async () => { const P = $('prog'), btn = $('send');
@@ -68,7 +74,8 @@ $('send').onclick = async () => { const P = $('prog'), btn = $('send');
     const outs = [{ address: to, v, note }]; if (sum - v - FEE > 0n) outs.push({ address: w.address, v: sum - v - FEE });
     const tx = K.buildTx(pick.map((o, k) => ({ ...o, gidx: o.g, decoys: decoys.slice(k * 15, k * 15 + 15) })), outs, FEE);
     P.textContent = `proved in ${((performance.now() - t0) / 1000).toFixed(1)}s, submitting…`; const r = await api('/api/tx', { tx }); if (r.error) throw r.error;
-    P.innerHTML = `sent · <a href="/explorer#/tx/${r.id}">${short(r.id, 12)}</a>`; $('to').value = ''; $('amt').value = ''; $('note').value = ''; $('nc').textContent = '0'; sync();
+    P.innerHTML = `sent · <a href="/explorer#/tx/${r.id}">${short(r.id, 12)}</a>`; st.sent.push({ txid: r.id, to, v: String(v), ts: Date.now(), sec: tx.secrets }); persist(); render();
+    $('to').value = ''; $('amt').value = ''; $('note').value = ''; $('nc').textContent = '0'; sync();
   } catch (e) { P.textContent = ''; toast(String(e), true); } btn.disabled = false; };
 let seed = null; try { seed = localStorage.getItem('aeon_seed'); } catch {} if (seed) open(seed); else $('setup').hidden = false;
 setInterval(sync, 12000);
