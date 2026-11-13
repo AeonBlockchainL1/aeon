@@ -76,7 +76,7 @@ export function makeOutput(addr, v, i, r, clear, note) {
   const { k, P, x } = derive(ss, i, to.A), mask = clear ? 1n : x, C = commit(mask, v);
   const o = { P: ph(P), C: ph(C), amt: clear ? String(v) : (BigInt(v) ^ amtPad(ss, i)).toString(16) }; if (ct) o.ct = ct;
   if (!clear) o.note = sealNote(ss, i, note);
-  return { o, mask, v: BigInt(v) };
+  return { o, mask, v: BigInt(v), k };
 }
 // scan one output: returns { v, mask, x(one-time secret), note } if it is ours, else null.
 export function scan(w, out, R, i) {
@@ -143,6 +143,8 @@ export function buildTx(ins, outs, fee) {
   const msg = txhash(prefix);
   prefix.vin.forEach((v, k) => { const p = prepared[k]; v.sig = mlsagSign(msg, p.ring, p.s, p.x, p.z, p.pseudo); v.ki = v.sig.I; });
   prefix.vout.forEach((o, i) => { o.rp = rangeProve(made[i].v, made[i].mask, msg); });
+  // what the sender needs later to prove a payment. Not enumerable, so it is never serialised or sent to a node.
+  Object.defineProperty(prefix, 'secrets', { value: { r: sh(r), outs: made.map((m) => ({ k: sh(m.k), mask: sh(m.mask), v: String(m.v) })) }, enumerable: false });
   return prefix;
 }
 // verify against chain lookups: getOut(gidx) -> {P,C}, spent(ki) -> bool
@@ -161,4 +163,38 @@ export function verifyTx(tx, getOut, spent) {
   for (const o of tx.vout) { if (!rangeVerify(o.C, o.rp, msg)) return 'range proof invalid'; sumOut = sumOut.add(pt(o.C)); }
   if (!sumIn.equals(sumOut.add(mul(H, fee)))) return 'amounts do not balance';
   return null;
+}
+
+// ---------- payment proofs ----------
+// The sender of a transaction can prove that one of its outputs pays a given address a given amount, to anyone,
+// without revealing anything else. The proof opens exactly one output: it carries the output's derivation scalar k
+// (so P = kG + A ties the output to the address), the commitment mask and the amount (so C opens to it), and a
+// Schnorr signature made with the transaction secret r against the R already on chain, so only the sender can make
+// one. The shared secret is not revealed, so the output's dead drop stays sealed and no other output is opened.
+export const PROOF_PREFIX = 'aeonproof1', MEMO_MAX = 140;
+const proofChallenge = (p, T) => Hs('aeon/proof', p.t, BigInt(p.i), sc(p.k), sc(p.m), BigInt(p.v), txhash(p.a), txhash(p.n || ''), T);
+// txid: id of the transaction. secrets: tx.secrets as returned by buildTx. i: output index. address: who was paid.
+export function makeProof(txid, secrets, i, address, memo = '') {
+  parseAddress(address); const o = secrets && secrets.outs && secrets.outs[i]; if (!o) throw 'no such output in this transaction';
+  if ([...String(memo)].length > MEMO_MAX) throw 'the message is longer than 140 characters';
+  const p = { t: txid, i, a: String(address).trim(), k: o.k, m: o.mask, v: o.v, n: String(memo) }, al = rand(), c = proofChallenge(p, mul(G, al));
+  p.c = sh(c); p.s = sh(mod(al - c * sc(secrets.r)));
+  return PROOF_PREFIX + b58(utf8ToBytes(JSON.stringify(p)));
+}
+export function parseProof(str) {
+  str = String(str || '').replace(/\s+/g, ''); if (!str.startsWith(PROOF_PREFIX)) throw 'a payment proof starts with aeonproof1';
+  let p; try { p = JSON.parse(new TextDecoder().decode(unb58(str.slice(PROOF_PREFIX.length)))); } catch { throw 'this proof is damaged or incomplete'; }
+  const hx = (x, n) => typeof x === 'string' && new RegExp('^[0-9a-f]{' + n + '}$').test(x);
+  if (!p || !hx(p.t, 64) || !Number.isInteger(p.i) || p.i < 0 || p.i > 7 || !hx(p.k, 64) || !hx(p.m, 64) || !hx(p.c, 64) || !hx(p.s, 64) || !/^\d{1,15}$/.test(p.v) || typeof p.a !== 'string' || typeof p.n !== 'string') throw 'this proof is damaged or incomplete';
+  return p;
+}
+// tx: the transaction the proof names, as the chain has it (needs R and vout[i].P / vout[i].C).
+// Returns { txid, index, address, quantum, amount, memo } when every check passes, otherwise throws the reason.
+export function verifyProof(str, tx) {
+  const p = parseProof(str), o = tx && Array.isArray(tx.vout) && tx.vout[p.i]; if (!o || !tx.R) throw 'the transaction has no such output';
+  const to = parseAddress(p.a), v = BigInt(p.v); if (v >= 1n << BigInt(BITS)) throw 'amount out of range';
+  if (ph(mul(G, sc(p.k)).add(to.A)) !== o.P) throw 'this output does not pay that address';
+  if (ph(commit(sc(p.m), v)) !== o.C) throw 'the amount does not open the commitment';
+  const c = sc(p.c); if (proofChallenge(p, mul(G, sc(p.s)).add(mul(pt(tx.R), c))) !== c) throw 'not signed by the sender of this transaction';
+  return { txid: p.t, index: p.i, address: p.a, quantum: !!to.kemPk, amount: v, memo: p.n };
 }
