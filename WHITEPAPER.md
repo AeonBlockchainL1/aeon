@@ -125,7 +125,7 @@ $AEON is the Robinhood Chain token that funds development and carries the commun
 - Done: testnet live with explorer, browser wallet and faucet
 - Done: $AEON launch
 - Done: open mining with Argon2id (browser miner at /mine, CLI miner in miner/)
-- Next: Meridian, hash-based spends and full-chain privacy
+- Next: audit of the node, its cryptography and Meridian (hash-based spends and full-chain privacy)
 - Then: mainnet with Meridian from block 1
 
 ## Links
